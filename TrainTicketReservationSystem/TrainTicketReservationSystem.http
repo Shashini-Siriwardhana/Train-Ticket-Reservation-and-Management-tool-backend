@@ -1,0 +1,6 @@
+@TrainTicketReservationSystem_HostAddress = https://localhost:7217
+
+GET {{TrainTicketReservationSystem_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
