@@ -23,17 +23,38 @@ jobs:
         with:
           dotnet-version: '8.x'
 
-      - name: Build with dotnet
-        run: dotnet build --configuration Release
+      - name: Restore JourneyService
+        run: dotnet restore ./JourneyService/JourneyService.csproj
 
-      - name: dotnet publish
-        run: dotnet publish -c Release -o "${{env.DOTNET_ROOT}}/myapp"
+      - name: Build JourneyService
+        run: >
+          dotnet build
+          ./JourneyService/JourneyService.csproj
+          --configuration Release
+          --no-restore
 
-      - name: Upload artifact for deployment job
+      - name: Publish JourneyService
+        run: >
+          dotnet publish
+          ./JourneyService/JourneyService.csproj
+          --configuration Release
+          --no-build
+          --output ./journey-publish
+
+      - name: Verify publish output
+        shell: pwsh
+        run: |
+          Get-ChildItem ./journey-publish
+
+          if (-not (Test-Path "./journey-publish/JourneyService.dll")) {
+              throw "JourneyService.dll was not found in the publish output."
+          }
+
+      - name: Upload JourneyService artifact
         uses: actions/upload-artifact@v4
         with:
-          name: .net-app
-          path: ${{env.DOTNET_ROOT}}/myapp
+          name: journey-service-app
+          path: ./journey-publish
 
   deploy:
     runs-on: windows-latest
@@ -46,7 +67,8 @@ jobs:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
-          name: .net-app
+          name: journey-service-app
+          path: ./journey-publish
       
       - name: Login to Azure
         uses: azure/login@v2
@@ -61,5 +83,5 @@ jobs:
         with:
           app-name: 'journey-api'
           slot-name: 'Production'
-          package: .
+          package: ./journey-publish
           
