@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using Azure.Core;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -69,12 +70,28 @@ namespace TrainTicketReservationSystem.Controllers
 
     [HttpPut]
     [Route("{id:guid}")]
-    public IActionResult EditBooking(Guid id, UpdateBookingDto updateBookingDto)
+    public async Task<IActionResult> EditBooking(Guid id, UpdateBookingDto updateBookingDto)
     {
       var booking = dBContext.Bookings.Find(id);
       if (booking is null)
       {
         return NotFound();
+      }
+
+      var seatAlreadyBooked = await dBContext.Bookings
+        .AsNoTracking()
+        .AnyAsync(otherBooking =>
+            otherBooking.BookingId != id &&
+            otherBooking.ScheduleId == updateBookingDto.ScheduleId &&
+            otherBooking.SeatId == updateBookingDto.SeatId &&
+            otherBooking.Status != "Cancelled");
+
+      if (seatAlreadyBooked)
+      {
+        return Conflict(new
+        {
+          message = "The selected seat has already been booked."
+        });
       }
 
       booking.Date = updateBookingDto.Date;

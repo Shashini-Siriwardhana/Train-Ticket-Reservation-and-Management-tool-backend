@@ -4,7 +4,6 @@ namespace TrainTicketReservationSystem.Models
 {
   public class UpdateBookingDto
   {
-    public Guid BookingId { get; set; }
     public DateTime Date { get; set; }
     public DateTime DepartureTime { get; set; }
     public required string DepartureStation { get; set; }
@@ -21,6 +20,5 @@ namespace TrainTicketReservationSystem.Models
     }
     public Guid ScheduleId { get; set; }
     public Guid SeatId { get; set; }
-    public string Status { get; set; }
   }
 }
