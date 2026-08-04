@@ -1,0 +1,6 @@
+@JourneyService_HostAddress = http://localhost:5163
+
+GET {{JourneyService_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
