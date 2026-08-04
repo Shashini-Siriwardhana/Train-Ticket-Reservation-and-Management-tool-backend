@@ -1,9 +1,11 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using TrainTicketReservationSystem.Data;
 using TrainTicketReservationSystem.Models;
 using TrainTicketReservationSystem.Models.Entities;
+using TrainTicketReservationSystem.Services.Journeys;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace TrainTicketReservationSystem.Controllers
@@ -13,10 +15,12 @@ namespace TrainTicketReservationSystem.Controllers
   public class BookingsController : ControllerBase
   {
     private readonly ApplicationDBContext dBContext;
+    private readonly IJourneyApiClient _journeyApiClient;
 
-    public BookingsController(ApplicationDBContext dBContext)
+    public BookingsController(ApplicationDBContext dBContext, IJourneyApiClient journeyApiClient)
     {
       this.dBContext = dBContext;
+      _journeyApiClient = journeyApiClient;
     }
 
     [HttpGet]
@@ -53,6 +57,9 @@ namespace TrainTicketReservationSystem.Controllers
         IsRecurring = addBookingDto.IsRecurring,
         RecurringType = addBookingDto.RecurringType,
         ClassType = addBookingDto.ClassType,
+        ScheduleId = addBookingDto.ScheduleId,
+        SeatId = addBookingDto.SeatId,
+        Status = "Confirmed"
       };
 
       dBContext.Bookings.Add(bookingEntity);
@@ -99,6 +106,41 @@ namespace TrainTicketReservationSystem.Controllers
       dBContext.SaveChanges();
 
       return Ok();
+    }
+
+    [HttpGet("available-seats")]
+    public async Task<IActionResult> GetAvailableSeats(
+        [FromQuery] Guid scheduleId,
+        [FromQuery] string classType)
+    {
+      if (scheduleId == Guid.Empty)
+      {
+        return BadRequest("A schedule must be selected.");
+      }
+
+      if (string.IsNullOrWhiteSpace(classType))
+      {
+        return BadRequest("A class must be selected.");
+      }
+      // Call Journey microservice.
+      var allSeats = await _journeyApiClient.GetSeats(scheduleId, classType);
+
+      // Read already-booked seats from BookingDb.
+      var bookedSeatIds = await dBContext.Bookings
+          .Where(booking =>
+              booking.ScheduleId == scheduleId &&
+              booking.Status != "Cancelled")
+          .Select(booking => booking.SeatId)
+          .ToListAsync();
+
+      var bookedSeatSet = bookedSeatIds.ToHashSet();
+
+      var availableSeats = allSeats
+          .Where(seat =>
+              !bookedSeatSet.Contains(seat.SeatId))
+          .ToList();
+
+      return Ok(availableSeats);
     }
   }
 }

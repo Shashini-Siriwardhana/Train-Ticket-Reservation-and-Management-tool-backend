@@ -1,6 +1,5 @@
+using JourneyService.Data;
 using Microsoft.EntityFrameworkCore;
-using TrainTicketReservationSystem.Data;
-using TrainTicketReservationSystem.Services.Journeys;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,21 +10,25 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddDbContext<ApplicationDBContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("BookingDatabase")));
-
-builder.Services.AddHttpClient<IJourneyApiClient, JourneyApiClient>(
-  client =>
-  {
-    client.BaseAddress = new Uri(builder.Configuration["Services:JourneyApi"]);
-  });
+builder.Services.AddDbContext<JourneyDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("JourneyDatabase")));
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+  var dbContext =
+      scope.ServiceProvider
+          .GetRequiredService<JourneyDbContext>();
+
+  await dbContext.Database.MigrateAsync();
+  await JourneyDbSeeder.SeedAsync(dbContext);
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+  app.UseSwagger();
+  app.UseSwaggerUI();
 }
 
 app.UseHttpsRedirection();

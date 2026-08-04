@@ -19,5 +19,8 @@ namespace TrainTicketReservationSystem.Models
     {
       get; set;
     }
+    public Guid ScheduleId { get; set; }
+    public Guid SeatId { get; set; }
+    public string Status { get; set; }
   }
 }

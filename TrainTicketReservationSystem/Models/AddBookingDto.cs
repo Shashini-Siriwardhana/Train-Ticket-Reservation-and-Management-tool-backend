@@ -32,5 +32,10 @@ namespace TrainTicketReservationSystem.Models
     {
       get; set;
     }
+    [Required]
+    public Guid ScheduleId { get; set; }
+    [Required]
+    public Guid SeatId { get; set; }
+    public string Status { get; set; } = "Confirmed";
   }
 }
