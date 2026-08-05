@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<SpecialRequests>
+  <SpecialRequest>
+    <SpecialRequestId>7796a3be-4de6-45db-a5a0-ad0201323ec6</SpecialRequestId>
+    <BookingId>5f3682e3-2b77-40b6-1fb2-08def2aff8f3</BookingId>
+    <RequestType>Wheelchair Assistance</RequestType>
+    <Description>Passenger requires assistance when boarding the train.</Description>
+    <Status>Pending</Status>
+    <CreatedAtUtc>2026-08-05T09:04:00.5187564+00:00</CreatedAtUtc>
+    <UpdatedAtUtc></UpdatedAtUtc>
+  </SpecialRequest>
+  <SpecialRequest>
+    <SpecialRequestId>77290b73-648d-4d1b-8d75-ee026078ce16</SpecialRequestId>
+    <BookingId>5f3682e3-2b77-40b6-1fb2-08def2aff8f3</BookingId>
+    <RequestType>Wheelchair assistance</RequestType>
+    <Description>qqqqq</Description>
+    <Status>Pending</Status>
+    <CreatedAtUtc>2026-08-05T11:01:25.1141663+00:00</CreatedAtUtc>
+    <UpdatedAtUtc></UpdatedAtUtc>
+  </SpecialRequest>
+</SpecialRequests>
