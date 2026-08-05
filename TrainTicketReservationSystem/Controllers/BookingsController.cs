@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Net;
 using Azure.Core;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -60,8 +61,12 @@ namespace TrainTicketReservationSystem.Controllers
         ClassType = addBookingDto.ClassType,
         ScheduleId = addBookingDto.ScheduleId,
         SeatId = addBookingDto.SeatId,
-        Status = "Confirmed"
-      };
+        Status = "Confirmed",
+        PassengerName = addBookingDto.PassengerName,
+        NIC = addBookingDto.NIC,
+        TelephoneNo = addBookingDto.TelephoneNo,
+        Address = addBookingDto.Address,
+  };
 
       dBContext.Bookings.Add(bookingEntity);
       dBContext.SaveChanges();
@@ -105,6 +110,10 @@ namespace TrainTicketReservationSystem.Controllers
       booking.IsRecurring = updateBookingDto.IsRecurring;
       booking.RecurringType = updateBookingDto.RecurringType;
       booking.ClassType = updateBookingDto.ClassType;
+      booking.PassengerName = updateBookingDto.PassengerName;
+      booking.NIC = updateBookingDto.NIC;
+      booking.TelephoneNo = updateBookingDto.TelephoneNo;
+      booking.Address = updateBookingDto.Address;
 
       dBContext.SaveChanges();
       return Ok(booking);

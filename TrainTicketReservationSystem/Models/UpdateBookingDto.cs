@@ -20,5 +20,9 @@ namespace TrainTicketReservationSystem.Models
     }
     public Guid ScheduleId { get; set; }
     public Guid SeatId { get; set; }
+    public string PassengerName { get; set; } = string.Empty;
+    public string NIC { get; set; } = string.Empty;
+    public string TelephoneNo { get; set; } = string.Empty;
+    public string Address { get; set; } = string.Empty;
   }
 }
