@@ -1,172 +1,211 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.Net;
-using Azure.Core;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using TrainTicketReservationSystem.Data;
+﻿using Microsoft.AspNetCore.Mvc;
 using TrainTicketReservationSystem.Models;
-using TrainTicketReservationSystem.Models.Entities;
-using TrainTicketReservationSystem.Services.Journeys;
-using static System.Runtime.InteropServices.JavaScript.JSType;
+using TrainTicketReservationSystem.Services.Bookings;
 
 namespace TrainTicketReservationSystem.Controllers
 {
-  [Route("api/[controller]")]
   [ApiController]
-  public class BookingsController : ControllerBase
+  [Route("api/[controller]")]
+  public sealed class BookingsController : ControllerBase
   {
-    private readonly ApplicationDBContext dBContext;
-    private readonly IJourneyApiClient _journeyApiClient;
+    private readonly IBookingService _bookingService;
 
-    public BookingsController(ApplicationDBContext dBContext, IJourneyApiClient journeyApiClient)
+    public BookingsController(
+        IBookingService bookingService)
     {
-      this.dBContext = dBContext;
-      _journeyApiClient = journeyApiClient;
+      _bookingService = bookingService;
     }
 
+    // GET: api/Bookings
     [HttpGet]
-    public IActionResult GetAllBookings()
+    public async Task<ActionResult<
+        IReadOnlyList<BookingResponseDto>>>
+        GetAllBookings(
+            CancellationToken cancellationToken)
     {
-      return Ok(dBContext.Bookings.ToList());
+      var bookings =
+          await _bookingService.GetAllAsync(
+              cancellationToken);
+
+      return Ok(bookings);
     }
 
-    [HttpGet]
-    [Route("{id:guid}")]
-    public IActionResult GetBookingById(Guid id)
+    // GET: api/Bookings/{id}
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<BookingResponseDto>>
+        GetBookingById(
+            Guid id,
+            CancellationToken cancellationToken)
     {
-      var booking = dBContext.Bookings.Find(id);
-      if (booking is null) 
-      { 
-        return NotFound();
-      }
-      return Ok(booking);
-    }
-
-    [HttpPost]
-    public IActionResult CreateBooking(AddBookingDto addBookingDto) 
-    {
-      var bookingEntity = new Booking()
+      if (id == Guid.Empty)
       {
-        Date = addBookingDto.Date,
-        DepartureTime =  addBookingDto.DepartureTime,
-        DepartureStation = addBookingDto.DepartureStation,
-        DestinationStation = addBookingDto.DestinationStation,
-        SeatNumber = addBookingDto.SeatNumber,
-        Route = addBookingDto.Route,
-        Price = addBookingDto.Price,
-        SpecialRequest = addBookingDto.SpecialRequest,
-        IsRecurring = addBookingDto.IsRecurring,
-        RecurringType = addBookingDto.RecurringType,
-        ClassType = addBookingDto.ClassType,
-        ScheduleId = addBookingDto.ScheduleId,
-        SeatId = addBookingDto.SeatId,
-        Status = "Confirmed",
-        PassengerName = addBookingDto.PassengerName,
-        NIC = addBookingDto.NIC,
-        TelephoneNo = addBookingDto.TelephoneNo,
-        Address = addBookingDto.Address,
-  };
-
-      dBContext.Bookings.Add(bookingEntity);
-      dBContext.SaveChanges();
-      return Ok(bookingEntity);
-    }
-
-    [HttpPut]
-    [Route("{id:guid}")]
-    public async Task<IActionResult> EditBooking(Guid id, UpdateBookingDto updateBookingDto)
-    {
-      var booking = dBContext.Bookings.Find(id);
-      if (booking is null)
-      {
-        return NotFound();
-      }
-
-      var seatAlreadyBooked = await dBContext.Bookings
-        .AsNoTracking()
-        .AnyAsync(otherBooking =>
-            otherBooking.BookingId != id &&
-            otherBooking.ScheduleId == updateBookingDto.ScheduleId &&
-            otherBooking.SeatId == updateBookingDto.SeatId &&
-            otherBooking.Status != "Cancelled");
-
-      if (seatAlreadyBooked)
-      {
-        return Conflict(new
+        return BadRequest(new
         {
-          message = "The selected seat has already been booked."
+          message =
+                "A valid booking ID is required."
         });
       }
 
-      booking.Date = updateBookingDto.Date;
-      booking.DepartureTime = updateBookingDto.DepartureTime;
-      booking.DepartureStation = updateBookingDto.DepartureStation;
-      booking.DestinationStation = updateBookingDto.DestinationStation;
-      booking.SeatNumber = updateBookingDto.SeatNumber;
-      booking.Route = updateBookingDto.Route;
-      booking.Price = updateBookingDto.Price;
-      booking.SpecialRequest = updateBookingDto.SpecialRequest;
-      booking.IsRecurring = updateBookingDto.IsRecurring;
-      booking.RecurringType = updateBookingDto.RecurringType;
-      booking.ClassType = updateBookingDto.ClassType;
-      booking.PassengerName = updateBookingDto.PassengerName;
-      booking.NIC = updateBookingDto.NIC;
-      booking.TelephoneNo = updateBookingDto.TelephoneNo;
-      booking.Address = updateBookingDto.Address;
+      var booking =
+          await _bookingService.GetByIdAsync(
+              id,
+              cancellationToken);
 
-      dBContext.SaveChanges();
+      if (booking is null)
+      {
+        return NotFound(new
+        {
+          message =
+                $"Booking {id} was not found."
+        });
+      }
+
       return Ok(booking);
     }
 
-    [HttpDelete]
-    [Route("{id:guid}")]
-    public IActionResult DeleteBooking(Guid id) 
+    // POST: api/Bookings
+    [HttpPost]
+    public async Task<ActionResult<BookingResponseDto>>
+        CreateBooking(
+            AddBookingDto dto,
+            CancellationToken cancellationToken)
     {
-      var booking = dBContext.Bookings.Find(id);
-      if (booking is null)
-      {
-        return NotFound();
-      }
-      dBContext.Bookings.Remove(booking);
-      dBContext.SaveChanges();
+      var result =
+          await _bookingService.CreateAsync(
+              dto,
+              cancellationToken);
 
-      return Ok();
+      if (!result.Succeeded)
+      {
+        return MapFailure(result);
+      }
+
+      var booking = result.Value!;
+
+      return CreatedAtAction(
+          nameof(GetBookingById),
+          new
+          {
+            id = booking.BookingId
+          },
+          booking);
     }
 
-    [HttpGet("available-seats")]
-    public async Task<IActionResult> GetAvailableSeats(
-        [FromQuery] Guid scheduleId,
-        [FromQuery] string classType)
+    // PUT: api/Bookings/{id}
+    [HttpPut("{id:guid}")]
+    public async Task<ActionResult<BookingResponseDto>>
+        EditBooking(
+            Guid id,
+            UpdateBookingDto dto,
+            CancellationToken cancellationToken)
     {
-      if (scheduleId == Guid.Empty)
+      var result =
+          await _bookingService.UpdateAsync(
+              id,
+              dto,
+              cancellationToken);
+
+      if (!result.Succeeded)
       {
-        return BadRequest("A schedule must be selected.");
+        return MapFailure(result);
       }
 
-      if (string.IsNullOrWhiteSpace(classType))
+      return Ok(result.Value);
+    }
+
+    // DELETE: api/Bookings/{id}
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> DeleteBooking(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+      var result =
+          await _bookingService.DeleteAsync(
+              id,
+              cancellationToken);
+
+      if (!result.Succeeded)
       {
-        return BadRequest("A class must be selected.");
+        return MapFailure(result);
       }
-      // Call Journey microservice.
-      var allSeats = await _journeyApiClient.GetSeats(scheduleId, classType);
 
-      // Read already-booked seats from BookingDb.
-      var bookedSeatIds = await dBContext.Bookings
-          .Where(booking =>
-              booking.ScheduleId == scheduleId &&
-              booking.Status != "Cancelled")
-          .Select(booking => booking.SeatId)
-          .ToListAsync();
+      return NoContent();
+    }
 
-      var bookedSeatSet = bookedSeatIds.ToHashSet();
+    // GET:
+    // api/Bookings/available-seats?...
+    [HttpGet("available-seats")]
+    public async Task<ActionResult<
+        IReadOnlyList<SeatOptionDto>>>
+        GetAvailableSeats(
+            [FromQuery] Guid scheduleId,
+            [FromQuery] string classType,
+            CancellationToken cancellationToken)
+    {
+      var result =
+          await _bookingService
+              .GetAvailableSeatsAsync(
+                  scheduleId,
+                  classType,
+                  cancellationToken);
 
-      var availableSeats = allSeats
-          .Where(seat =>
-              !bookedSeatSet.Contains(seat.SeatId))
-          .ToList();
+      if (!result.Succeeded)
+      {
+        return MapFailure(result);
+      }
 
-      return Ok(availableSeats);
+      return Ok(result.Value);
+    }
+
+    private ActionResult MapFailure<T>(
+    BookingServiceResult<T> result)
+    {
+      var message =
+          result.Errors.FirstOrDefault()
+          ?? "The operation could not be completed.";
+
+      return result.FailureType switch
+      {
+        BookingFailureType.Validation =>
+            BadRequest(new
+            {
+              message =
+                    "Validation failed.",
+              errors =
+                    result.Errors
+            }),
+
+        BookingFailureType.NotFound =>
+            NotFound(new
+            {
+              message
+            }),
+
+        BookingFailureType.Conflict =>
+            Conflict(new
+            {
+              message
+            }),
+
+        BookingFailureType.DependencyUnavailable =>
+            StatusCode(
+                StatusCodes
+                    .Status503ServiceUnavailable,
+                new
+                {
+                  message
+                }),
+
+        _ =>
+            StatusCode(
+                StatusCodes
+                    .Status500InternalServerError,
+                new
+                {
+                  message =
+                        "An unexpected error occurred."
+                })
+      };
     }
   }
 }
