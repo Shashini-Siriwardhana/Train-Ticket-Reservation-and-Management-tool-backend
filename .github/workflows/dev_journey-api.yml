@@ -7,6 +7,9 @@ on:
   push:
     branches:
       - dev
+    paths:
+      - 'JourneyService/**'
+      - '.github/workflows/dev_journey-api.yml'
   workflow_dispatch:
 
 jobs:
