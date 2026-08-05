@@ -23,17 +23,24 @@ jobs:
         with:
           dotnet-version: '8.x'
 
-      - name: Build with dotnet
-        run: dotnet build --configuration Release
+      - name: Restore Booking API
+        run: dotnet restore ./TrainTicketReservationSystem/TrainTicketReservationSystem.csproj
 
-      - name: dotnet publish
-        run: dotnet publish -c Release -o "${{env.DOTNET_ROOT}}/myapp"
+      - name: Build Booking API
+        run: dotnet build ./TrainTicketReservationSystem/TrainTicketReservationSystem.csproj --configuration Release --no-restore
 
-      - name: Upload artifact for deployment job
+      - name: Publish Booking API
+        run: dotnet publish ./TrainTicketReservationSystem/TrainTicketReservationSystem.csproj --configuration Release --no-build --output ./booking-publish
+
+      - name: Show published files
+        shell: pwsh
+        run: Get-ChildItem ./booking-publish
+
+      - name: Upload Booking API artifact
         uses: actions/upload-artifact@v4
         with:
-          name: .net-app
-          path: ${{env.DOTNET_ROOT}}/myapp
+          name: booking-api-app
+          path: ./booking-publish
 
   deploy:
     runs-on: windows-latest
@@ -46,7 +53,8 @@ jobs:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
-          name: .net-app
+          name: booking-api-app
+          path: ./booking-publish
       
       - name: Login to Azure
         uses: azure/login@v2
@@ -61,5 +69,5 @@ jobs:
         with:
           app-name: 'ticket-booking-api'
           slot-name: 'Production'
-          package: .
+          package: ./booking-publish
           
