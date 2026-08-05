@@ -8,6 +8,9 @@ on:
     branches:
       - dev
   workflow_dispatch:
+  paths:
+      - 'TrainTicketReservationSystem/**'
+      - '.github/workflows/dev_ticket-booking-api.yml'
 
 jobs:
   build:
