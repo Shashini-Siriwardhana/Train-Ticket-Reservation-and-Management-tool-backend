@@ -1,7 +1,12 @@
 using Microsoft.EntityFrameworkCore;
+using TrainTicketReservationSystem.BackgroundJobs.Reports;
 using TrainTicketReservationSystem.Data;
+using TrainTicketReservationSystem.Repositories.Bookings;
+using TrainTicketReservationSystem.Repositories.Reports;
 using TrainTicketReservationSystem.Repositories.SpecialRequests;
+using TrainTicketReservationSystem.Services.Bookings;
 using TrainTicketReservationSystem.Services.Journeys;
+using TrainTicketReservationSystem.Services.Reports;
 using TrainTicketReservationSystem.Services.SpecialRequests;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -23,14 +28,22 @@ builder.Services.AddDbContext<ApplicationDBContext>(options => options.UseSqlSer
 
     sqlOptions.CommandTimeout(60);
   }));
+builder.Services.AddScoped<IBookingRepository, EfBookingRepository>();
+builder.Services.AddScoped<IBookingService, BookingService>();
+builder.Services.AddSingleton<ISpecialRequestRepository, XmlSpecialRequestRepository>();
 
 builder.Services.AddHttpClient<IJourneyApiClient, JourneyApiClient>(
   client =>
   {
     client.BaseAddress = new Uri(builder.Configuration["Services:JourneyApi"]);
   });
-builder.Services.AddSingleton<ISpecialRequestRepository, XmlSpecialRequestRepository>();
 builder.Services.AddScoped<ISpecialRequestService, SpecialRequestService>();
+
+builder.Services.AddSingleton<IReportJobQueue, ReportJobQueue>();
+builder.Services.AddScoped<IReportJobRepository, EfReportJobRepository>();
+builder.Services.AddScoped<IWeeklyReportGenerator, WeeklyReportGenerator>();
+
+builder.Services.AddHostedService<WeeklyReportWorker>();
 
 var app = builder.Build();
 

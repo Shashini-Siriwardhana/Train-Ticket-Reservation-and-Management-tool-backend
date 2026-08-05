@@ -4,8 +4,6 @@ namespace TrainTicketReservationSystem.Services.Journeys
 {
   public interface IJourneyApiClient
   {
-    Task<IReadOnlyList<SeatOptionDto>> GetSeats(
-        Guid scheduleId,
-        string classType);
+    Task<IReadOnlyList<SeatOptionDto>> GetSeats(Guid scheduleId, string classType, CancellationToken cancellationToken = default);
   }
 }

@@ -11,9 +11,7 @@ namespace TrainTicketReservationSystem.Services.Journeys
       _httpClient = httpClient;
     }
 
-    public async Task<IReadOnlyList<SeatOptionDto>> GetSeats(
-        Guid scheduleId,
-        string classType)
+    public async Task<IReadOnlyList<SeatOptionDto>> GetSeats(Guid scheduleId, string classType, CancellationToken cancellationToken = default)
     {
       var encodedClassType = Uri.EscapeDataString(classType);
       var url = $"api/Seats/{scheduleId}/seats" + $"?classType={encodedClassType}";

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TrainTicketReservationSystem.Data;
 
@@ -11,9 +12,11 @@ using TrainTicketReservationSystem.Data;
 namespace TrainTicketReservationSystem.Migrations
 {
     [DbContext(typeof(ApplicationDBContext))]
-    partial class ApplicationDBContextModelSnapshot : ModelSnapshot
+    [Migration("20260805184222_AddUniqueScheduleSeatIndex")]
+    partial class AddUniqueScheduleSeatIndex
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -101,60 +104,6 @@ namespace TrainTicketReservationSystem.Migrations
                         .HasFilter("[Status] <> 'Cancelled'");
 
                     b.ToTable("Bookings");
-                });
-
-            modelBuilder.Entity("TrainTicketReservationSystem.Models.Entities.ReportJob", b =>
-                {
-                    b.Property<Guid>("ReportJobId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTimeOffset?>("CompletedAtUtc")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("ErrorMessage")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<DateTime?>("FromDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("OutputFileName")
-                        .HasMaxLength(260)
-                        .HasColumnType("nvarchar(260)");
-
-                    b.Property<long?>("ProcessingMilliseconds")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("ProgressPercentage")
-                        .HasColumnType("int");
-
-                    b.Property<DateTimeOffset?>("StartedAtUtc")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
-
-                    b.Property<DateTime?>("ToDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("ReportJobId");
-
-                    b.HasIndex("CreatedAtUtc")
-                        .HasDatabaseName("IX_ReportJobs_CreatedAtUtc");
-
-                    b.HasIndex("Status")
-                        .HasDatabaseName("IX_ReportJobs_Status");
-
-                    b.ToTable("ReportJobs", null, t =>
-                        {
-                            t.HasCheckConstraint("CK_ReportJobs_ProgressPercentage", "[ProgressPercentage] >= 0 AND [ProgressPercentage] <= 100");
-                        });
                 });
 #pragma warning restore 612, 618
         }
