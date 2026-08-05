@@ -36,15 +36,19 @@ jobs:
       - name: Publish Booking API
         run: dotnet publish ./TrainTicketReservationSystem/TrainTicketReservationSystem.csproj --configuration Release --no-build --output ./booking-publish
 
-      - name: Show published files
+      - name: Verify Booking API publish output
         shell: pwsh
-        run: Get-ChildItem ./booking-publish
-
-      - name: Upload Booking API artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: booking-api-app
-          path: ./booking-publish
+        run: |
+          Get-ChildItem ./booking-publish
+      
+          if (-not (Test-Path "./booking-publish/TrainTicketReservationSystem.dll")) {
+              throw "TrainTicketReservationSystem.dll was not found in the publish output."
+          }
+            - name: Upload Booking API artifact
+              uses: actions/upload-artifact@v4
+              with:
+                name: booking-api-app
+                path: ./booking-publish
 
   deploy:
     runs-on: windows-latest
